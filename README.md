@@ -20,7 +20,7 @@ Leorio does say "Number 1"
 killua0 hunts Leorio does listen
 Leorio does say "Number 2"
 killua2 hunts Leorio does listen
-	Gon wants killua0 > killua1 {
+Gon wants killua0 > killua1 {
     Leorio does say killua1
 } wants killua1 > killua0 {
    Leorio does say killua0
