@@ -1,6 +1,7 @@
 # Hunterlang
-A hunter x hunter themed interpreted esoteric programming language.
-A the first version of the lexer is done, the parser is still in work.
+A hunter x hunter themed interpreted esoteric programming language.  
+
+The first version of the lexer is done, the parser is still in work.
 Some example code:
 ```	
 #Add two numbers
