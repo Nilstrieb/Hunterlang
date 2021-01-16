@@ -45,7 +45,7 @@ public class Parser {
             }
 
             //calculate the arguments of the start node, parsing the whole statement
-            getArguments(startNode, true);
+            doStatement(startNode, true);
             System.out.println(prevNode);
             statements.add(prevNode);
         } while (iterator.hasNext());
@@ -54,7 +54,7 @@ public class Parser {
         return statements;
     }
 
-    private void getArguments(ParseTreeNode node, boolean isParent) throws ParseException {
+    private void doStatement(ParseTreeNode node, boolean isParent) throws ParseException {
         if (node.getKey() == WordType.MINUS && prevNode.getKey() != WordType.NUMBER) {
             node.setKey(WordType.NEGATIVE);
         }
@@ -77,19 +77,17 @@ public class Parser {
         if (isParent) {
             prevNode = node;
         }
-        if (expectedArg == 0) {
-            nextToken();
-        } else {
-            nextToken();
+        nextToken();
+        if (expectedArg != 0) {
             for (int i = 0; i < expectedArg; i++) {
                 ParseTreeNode child = currentToken.toNode();
-                getArguments(child, false);
+                doStatement(child, false);
                 node.addChild(child);
             }
         }
 
         if (currentToken != null && currentToken.expectsPreArg()) {
-            getArguments(currentToken.toNode(), true);
+            doStatement(currentToken.toNode(), true);
         }
     }
 

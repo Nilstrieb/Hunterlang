@@ -27,13 +27,13 @@ public enum WordType {
     private int postArgAmount;
     private int preArgAmount;
 
-    WordType(int postArgAmount, int preArgAmount) {
+    WordType(int preArgAmount, int postArgAmount) {
         this.postArgAmount = postArgAmount;
         this.preArgAmount = preArgAmount;
     }
 
     WordType(int postArgAmount) {
-        this(postArgAmount, 0);
+        this(0, postArgAmount);
     }
 
     WordType() {

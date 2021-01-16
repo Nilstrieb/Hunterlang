@@ -166,8 +166,11 @@ public class Lexer {
                     Leorio does say "small killua"
                 }
                 """;
+        String hierarchy = """
+                killua0 hunts 3 > 3
+                """;
 
-        ArrayList<LexToken> tokens = l.lex(ifs);
+        ArrayList<LexToken> tokens = l.lex(hierarchy);
 
         Parser p = new Parser();
         try {
