@@ -1,5 +1,7 @@
 package com.github.nilstrieb.hunterlang.lexer;
 
+import com.github.nilstrieb.hunterlang.hllibrary.FunctionArgLookup;
+
 public enum WordType {
     ASSIGNMENT(1, 1), //memory, value
     MEMCALL(1), //adress
@@ -14,15 +16,13 @@ public enum WordType {
     GTHAN(1, 1),
     LTHAN(1, 1),
     EQUALS(1, 1),
-    FUNCCALL(-1), //args
-    LIB(1), //function
     MINUS(1, 1),
     PLUS(1, 1),
     MULTIPLY(1, 1),
     DIVIDE(1, 1),
     MOD(1, 1),
     NEGATIVE(1),
-    EMPTY;
+    EMPTY, LIBFUNCCALL(-1);
 
     private int postArgAmount;
     private int preArgAmount;

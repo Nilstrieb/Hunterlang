@@ -1,116 +1,166 @@
 package com.github.nilstrieb.hunterlang.parser;
 
-import com.github.nilstrieb.hunterlang.hllibrary.FunctionArgLookup;
 import com.github.nilstrieb.hunterlang.lexer.LexToken;
 import com.github.nilstrieb.hunterlang.lexer.WordType;
 import com.github.nilstrieb.hunterlang.lib.ConsoleColors;
+import com.sun.source.tree.LambdaExpressionTree;
 
 import java.util.ArrayList;
 import java.util.ListIterator;
 
 public class Parser {
 
-    private ListIterator<LexToken> iterator;
-
-    private LexToken currentToken = null;
-    private LexToken prevToken = null;
-    private LexToken nextToken = null;
-
-    private ParseTreeNode prevNode;
-
     public ArrayList<ParseTreeNode> parse(ArrayList<LexToken> tokens) throws ParseException {
+
         System.out.println(ConsoleColors.GREEN_BACKGROUND + ConsoleColors.BLACK_BOLD + "------START PARSER------" + ConsoleColors.RESET);
 
-        ArrayList<ParseTreeNode> statements = new ArrayList<>();
-
-        iterator = tokens.listIterator();
-
-        currentToken = iterator.next();
-        if (iterator.hasNext()) {
-            nextToken = iterator.next();
+        ArrayList<ArrayList<LexToken>> split = splitStatements(tokens);
+        for (ArrayList<LexToken> lexTokens : split) {
+            System.out.println(lexTokens);
         }
 
-        //goes through each statement. On pass -> one statement
-        do {
-            System.out.println(ConsoleColors.GREEN_BRIGHT + "NEXT STATEMENT");
+        ArrayList<ParseTreeNode> list = new ArrayList<>();
 
-            prevNode = new ParseTreeNode();
+        ParseTreeNode parent = null;
+        for (ArrayList<LexToken> statement : split) {
+            ListIterator<LexToken> iterator = statement.listIterator();
 
-            //start with first token
-            ParseTreeNode startNode = currentToken.toNode();
+            LexToken current = iterator.next();
 
-            //if it wants a pre argument theres an error
-            if (currentToken.expectsPreArg()) {
-                throw new ParseException("previous expression expected, doesn't exist");
+            switch (current.getKey()) {
+                case MEMCALL -> {
+                    //assignment
+                    int assignmentIndex = 0;
+                    while (iterator.hasNext()) {
+                        assignmentIndex++;
+                        current = iterator.next();
+                        if (current.getKey() == WordType.ASSIGNMENT) {
+                            break;
+                        }
+                    }
+
+                    parent = current.toNode();
+                    parent.addChild(evaluate(new ArrayList<>(statement.subList(0, assignmentIndex))));
+                    parent.addChild(evaluate(new ArrayList<>(statement.subList(assignmentIndex + 1, statement.size()))));
+                }
+                case IF, WANTS -> {
+                    parent = new ParseTreeBodyNode(current.toNode());
+                    ParseTreeBodyNode parentBN = (ParseTreeBodyNode) parent;
+                    while (current.getKey() != WordType.BOPEN) {
+                        current = iterator.next();
+                        parent.addChild(current.toNode());
+                    }
+
+                    int brackets = 0;
+                    while ((brackets != 0 || current.getKey() != WordType.BCLOSE) && iterator.hasNext()) {
+                        current = iterator.next();
+                        parentBN.addToken(current);
+                        if (current.getKey() == WordType.BOPEN) {
+                            brackets++;
+                        } else if (current.getKey() == WordType.BCLOSE) {
+                            brackets--;
+                        }
+                    }
+                    parentBN.parse();
+                }
+                case ELSE -> {
+
+                }
+                case LIBFUNCCALL -> {
+
+                }
+                case BCLOSE -> {
+                }
+
+                default -> throw new ParseException("Unexpected value at start of statement: " + current.getKey());
             }
 
-            //calculate the arguments of the start node, parsing the whole statement
-            doStatement(startNode, true);
-            System.out.println(prevNode);
-            statements.add(prevNode);
-        } while (iterator.hasNext());
+            list.add(parent);
+        }
 
         System.out.println(ConsoleColors.GREEN_BACKGROUND + ConsoleColors.BLACK_BOLD + "------STOP PARSER------" + ConsoleColors.RESET);
-        return statements;
+        return list;
     }
 
-    private void doStatement(ParseTreeNode node, boolean isParent) throws ParseException {
-        if (node.getKey() == WordType.MINUS && prevNode.getKey() != WordType.NUMBER) {
-            node.setKey(WordType.NEGATIVE);
-        }
+    /**
+     * Evalues an expression. For example something like killuakillua3+4 > 6
+     *
+     * @param tokens The tokens
+     * @return The parent node
+     */
+    private ParseTreeNode evaluate(ArrayList<LexToken> tokens) throws ParseException {
+        ListIterator<LexToken> iterator = tokens.listIterator();
+        LexToken prev;
+        LexToken curr;
+        LexToken next;
+        ParseTreeNode currentParent;
 
-        if (node.expectsPreArg()) {
-            node.addChild(prevNode, true);
-        }
-        int expectedArg = node.expectsPostArgCount();
-        if (expectedArg == -1) {
-            if (node.getKey() == WordType.FUNCCALL) {
-                //a function. will only support lib functions
-                System.out.println(currentToken);
-                expectedArg = FunctionArgLookup.argLookup(prevToken.getValue(), currentToken.getValue());
-            } else {
-                ParseTreeBodyNode bNode = new ParseTreeBodyNode(node);
-                node = bNode;
-                fillBody(bNode);
-            }
-        }
-        if (isParent) {
-            prevNode = node;
-        }
-        nextToken();
-        if (expectedArg != 0) {
-            for (int i = 0; i < expectedArg; i++) {
-                ParseTreeNode child = currentToken.toNode();
-                doStatement(child, false);
-                node.addChild(child);
-            }
-        }
-
-        if (currentToken != null && currentToken.expectsPreArg()) {
-            doStatement(currentToken.toNode(), true);
-        }
-    }
-
-    private void fillBody(ParseTreeBodyNode node) throws ParseException {
-        int level = 0;
-        nextToken();
-        while (currentToken.getKey() != WordType.BCLOSE || level != 0) {
-            if (currentToken.getKey() == WordType.BOPEN) {
-                level++;
-            } else if (currentToken.getKey() == WordType.BCLOSE) {
-                level--;
-            }
-            node.addToken(currentToken);
-            nextToken();
-        }
-        node.parse();
-    }
-
-    private void nextToken() {
-        prevToken = currentToken;
-        currentToken = nextToken;
+        prev = iterator.next();
         if (iterator.hasNext()) {
-            nextToken = iterator.next();
+            curr = iterator.next();
+        } else {
+            //1 token
+            return prev.toNode();
         }
+
+        if (iterator.hasNext()) {
+            next = iterator.next();
+        } else {
+            //2 tokens
+            currentParent = prev.toNode();
+            currentParent.addChild(curr.toNode());
+            return currentParent;
+        }
+
+        if (curr.hasPrefix()) {
+            currentParent = curr.toNode();
+            currentParent.addChild(prev.toNode(), true);
+            currentParent.addChild(evaluate(new ArrayList<>(tokens.subList(2, tokens.size()))));
+        } else if (prev.postfixCount() == 1) {
+            currentParent = prev.toNode();
+            currentParent.addChild(evaluate(new ArrayList<>(tokens.subList(1, tokens.size()))));
+        } else {
+            throw new ParseException("more than one arg: " + prev.postfixCount() + " thrown on: " + prev + " all: " + tokens);
+        }
+        return currentParent;
+    }
+
+    private ArrayList<ArrayList<LexToken>> splitStatements(ArrayList<LexToken> tokens) throws ParseException {
+        System.out.println(ConsoleColors.YELLOW_BACKGROUND_BRIGHT + ConsoleColors.BLACK_BOLD + "SPLITTER" + ConsoleColors.RESET);
+        ArrayList<ArrayList<LexToken>> tokensSplit = new ArrayList<>();
+        tokensSplit.add(new ArrayList<>());
+
+        ListIterator<LexToken> iterator = tokens.listIterator();
+
+        if (tokens.size() < 2) {
+            throw new ParseException("code has to consist of at least 2 tokens");
+        }
+
+        LexToken prev;
+        LexToken curr = iterator.next();
+        tokensSplit.get(0).add(curr);
+
+        int i = 0;
+        int brackets = 0;
+        while (iterator.hasNext()) {
+            prev = curr;
+            curr = iterator.next();
+
+            if (curr.getKey() == WordType.BOPEN) {
+                brackets++;
+            }
+            if (brackets == 0 && !prev.hasPostfix() && !curr.hasPrefix()) {
+                //when there is no connection between two tokens, they are part of seperate statements
+                tokensSplit.add(new ArrayList<>());
+                i++;
+            }
+
+            tokensSplit.get(i).add(curr);
+
+            if (curr.getKey() == WordType.BCLOSE) {
+                brackets--;
+            }
+        }
+        return tokensSplit;
     }
 }

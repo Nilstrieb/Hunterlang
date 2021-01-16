@@ -13,7 +13,7 @@ public class Lexer {
 
     private static final String MEMCALL = "killua";
     public static final String ASSIGNMENT = "hunts";
-    public static final String IF = "Gon";
+    public static final String IF = "Gon wants";
     public static final String WANTS = "wants";
     public static final String ELSE = "got";
     public static final String BOPEN = "{";
@@ -38,6 +38,7 @@ public class Lexer {
     private ArrayList<LexToken> temp;
 
     public ArrayList<LexToken> lex(String code) {
+        System.out.println(ConsoleColors.GREEN_BACKGROUND + ConsoleColors.BLACK_BOLD + "------START LEXER------" + ConsoleColors.RESET);
         tokens = new ArrayList<>();
         temp = new ArrayList<>();
 
@@ -124,8 +125,7 @@ public class Lexer {
                 else if (sub.matches(LIBFUNCCALL_REGEX)) {
                     String libName = sub.replaceAll(LIBFUNCCALL_REGEX, "$1");
                     String funcName = sub.replaceAll(LIBFUNCCALL_REGEX, "$2");
-                    addToken(WordType.LIB, libName);
-                    addToken(WordType.FUNCCALL, funcName);
+                    addToken(WordType.LIBFUNCCALL, libName + "." + funcName);
                     j += libName.length(); //lib name
                     j += 1 + 4 + 1; // space + does + space
                     j += funcName.length() - 1; //func name
@@ -137,6 +137,7 @@ public class Lexer {
             temp.clear();
         }
 
+        System.out.println(ConsoleColors.GREEN_BACKGROUND + ConsoleColors.BLACK_BOLD + "------STOP LEXER------" + ConsoleColors.RESET);
         return tokens;
     }
 
@@ -152,11 +153,13 @@ public class Lexer {
         Lexer l = new Lexer();
 
         String assign = """
+                killua70 hunts 3 > 0
                 killua0 hunts 3
                 killua0 hunts -3.4 #hunts nothing
                 killua1 hunts "hallo"
                 #comment""";
         String ifs = """
+                killua0 hunts 3 > 0
                 Gon wants false {
                     Leorio does say "false"
                 }
@@ -165,19 +168,29 @@ public class Lexer {
                 } got {
                     Leorio does say "small killua"
                 }
+                Gon wants true {
+                    Gon wants true {
+                        1
+                    }
+                }
+                """;
+        String sif = """
+                Gon wants true {
+                    Leorio does say "false"
+                
                 """;
         String hierarchy = """
                 killua0 hunts 3 > 3
                 """;
 
-        ArrayList<LexToken> tokens = l.lex(hierarchy);
+        ArrayList<LexToken> tokens = l.lex(sif);
 
         Parser p = new Parser();
         try {
             ArrayList<ParseTreeNode> nodes = p.parse(tokens);
 
-            for (ParseTreeNode node : nodes) {
-                System.out.println(node);
+            for (ParseTreeNode parseTreeNode : nodes) {
+                System.out.println(parseTreeNode);
             }
         } catch (ParseException e) {
             e.printStackTrace();
