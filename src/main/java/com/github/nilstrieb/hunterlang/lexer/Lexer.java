@@ -1,6 +1,9 @@
 package com.github.nilstrieb.hunterlang.lexer;
 
 import com.github.nilstrieb.hunterlang.lib.ConsoleColors;
+import com.github.nilstrieb.hunterlang.parser.ParseException;
+import com.github.nilstrieb.hunterlang.parser.ParseTreeNode;
+import com.github.nilstrieb.hunterlang.parser.Parser;
 
 import java.util.ArrayList;
 
@@ -31,15 +34,16 @@ public class Lexer {
     public static final String STRING_REGEX = "^\"(.*)\".*";
     public static final String NUMBER_REGEX = "^(-?\\d+.?\\d*).*";
 
-    private LexedList tokens;
+    private ArrayList<LexToken> tokens;
+    private ArrayList<LexToken> temp;
 
-    public LexedList lex(String code) {
-        tokens = new LexedList();
-        ArrayList<LexToken> tempList = new ArrayList<>();
+    public ArrayList<LexToken> lex(String code) {
+        tokens = new ArrayList<>();
+        temp = new ArrayList<>();
+
         String[] lines = code.split("\\r\\n|\\n");
 
         for (int i = 0; i < lines.length; i++) {
-            tokens.newLine();
             String line = lines[i];
             for (int j = 0; j < line.length(); j++) {
                 String sub = line.substring(j);
@@ -53,103 +57,127 @@ public class Lexer {
                 //FIXED KEYWORDS
 
                 else if (sub.startsWith(MEMCALL)) {
-                    tokens.add(i, WordType.MEMCALL);
+                    addToken(WordType.MEMCALL);
                     j += MEMCALL.length() - 1;
                 } else if (sub.startsWith(ASSIGNMENT)) {
-                    tokens.add(i, WordType.ASSIGNMENT);
+                    addToken(WordType.ASSIGNMENT);
                     j += ASSIGNMENT.length() - 1;
                 } else if (sub.startsWith(IF)) {
-                    tokens.add(i, WordType.IF);
+                    addToken(WordType.IF);
                     j += IF.length() - 1;
-                } else if (sub.startsWith(WANTS)){
-                    tokens.add(i, WordType.WANTS);
+                } else if (sub.startsWith(WANTS)) {
+                    addToken(WordType.WANTS);
                     j += WANTS.length() - 1;
-                } else if (sub.startsWith(ELSE)){
-                    tokens.add(i, WordType.ELSE);
+                } else if (sub.startsWith(ELSE)) {
+                    addToken(WordType.ELSE);
                     j += ELSE.length() - 1;
                 }
 
                 //CONDITIONS
-                else if (sub.startsWith(GTHAN)){
-                    tokens.add(i, WordType.GTHAN);
+                else if (sub.startsWith(GTHAN)) {
+                    addToken(WordType.GTHAN);
                     j += GTHAN.length() - 1;
-                } else if (sub.startsWith(LTHAN)){
-                    tokens.add(i, WordType.LTHAN);
+                } else if (sub.startsWith(LTHAN)) {
+                    addToken(WordType.LTHAN);
                     j += LTHAN.length() - 1;
-                } else if (sub.startsWith(EQUALS)){
-                    tokens.add(i, WordType.EQUALS);
+                } else if (sub.startsWith(EQUALS)) {
+                    addToken(WordType.EQUALS);
                     j += EQUALS.length() - 1;
                 }
 
                 //OPERATORS
-                else if (sub.startsWith(PLUS)){
-                    tokens.add(i, WordType.PLUS);
-                } else if (sub.startsWith(MINUS)){
-                    tokens.add(i, WordType.MINUS);
-                } else if (sub.startsWith(MULTIPLY)){
-                    tokens.add(i, WordType.MULTIPLY);
-                }else if (sub.startsWith(DIVIDE)){
-                    tokens.add(i, WordType.DIVIDE);
-                } else if (sub.startsWith(MOD)){
-                    tokens.add(i, WordType.MOD);
+                else if (sub.startsWith(PLUS)) {
+                    addToken(WordType.PLUS);
+                } else if (sub.startsWith(MINUS)) {
+                    addToken(WordType.MINUS);
+                } else if (sub.startsWith(MULTIPLY)) {
+                    addToken(WordType.MULTIPLY);
+                } else if (sub.startsWith(DIVIDE)) {
+                    addToken(WordType.DIVIDE);
+                } else if (sub.startsWith(MOD)) {
+                    addToken(WordType.MOD);
                 }
 
                 // BRACKETS
-                else if (sub.startsWith(BOPEN)){
-                    tokens.add(i, WordType.BOPEN);
-                } else if (sub.startsWith(BCLOSE)){
-                    tokens.add(i, WordType.BCLOSE);
+                else if (sub.startsWith(BOPEN)) {
+                    addToken(WordType.BOPEN);
+                } else if (sub.startsWith(BCLOSE)) {
+                    addToken(WordType.BCLOSE);
                 }
 
                 //VALUES
                 else if (sub.matches(STRING_REGEX)) {
                     String string = sub.replaceAll(STRING_REGEX, "$1");
-                    tokens.add(i, WordType.STRING, string);
+                    addToken(WordType.STRING, string);
                     j += string.length() + 1;
                 } else if (sub.matches(NUMBER_REGEX)) {
                     String number = sub.replaceAll(NUMBER_REGEX, "$1");
-                    tokens.add(i, WordType.NUMBER, number);
+                    addToken(WordType.NUMBER, number);
                     j += number.length() - 1;
-                } else if (sub.matches(BOOL_REGEX)){
+                } else if (sub.matches(BOOL_REGEX)) {
                     String bool = sub.replaceAll(BOOL_REGEX, "$1");
-                    tokens.add(i, WordType.BOOL, bool);
+                    addToken(WordType.BOOL, bool);
                     j += bool.length() - 1;
                 }
 
                 //Calls
-                else if(sub.matches(LIBFUNCCALL_REGEX)){
+                else if (sub.matches(LIBFUNCCALL_REGEX)) {
                     String libName = sub.replaceAll(LIBFUNCCALL_REGEX, "$1");
                     String funcName = sub.replaceAll(LIBFUNCCALL_REGEX, "$2");
-                    tokens.add(i, WordType.LIB, libName);
-                    tokens.add(i, WordType.FUNCCALL, funcName);
+                    addToken(WordType.LIB, libName);
+                    addToken(WordType.FUNCCALL, funcName);
                     j += libName.length(); //lib name
                     j += 1 + 4 + 1; // space + does + space
                     j += funcName.length() - 1; //func name
                 }
             }
             System.out.println(ConsoleColors.GREEN_BOLD + line);
-            System.out.println(ConsoleColors.BLUE_BOLD + tokens.get(i));
+            System.out.println(ConsoleColors.BLUE_BOLD + temp);
+            tokens.addAll(temp);
+            temp.clear();
         }
 
         return tokens;
     }
 
+    private void addToken(WordType type, String value) {
+        temp.add(new LexToken(type, value));
+    }
+
+    private void addToken(WordType type) {
+        temp.add(new LexToken(type));
+    }
+
     public static void main(String[] args) {
         Lexer l = new Lexer();
 
-        LexedList tokens = l.lex("""
+        String assign = """
                 killua0 hunts 3
                 killua0 hunts -3.4 #hunts nothing
-                killua0 hunts 4
                 killua1 hunts "hallo"
-                #comment
+                #comment""";
+        String ifs = """
                 Gon wants false {
                     Leorio does say "false"
-                } wants killua0 > 3 {
+                }
+                wants killua0 > 3 {
                     Leorio does say "big killua"
                 } got {
                     Leorio does say "small killua"
                 }
-                """);
+                """;
+
+        ArrayList<LexToken> tokens = l.lex(ifs);
+
+        Parser p = new Parser();
+        try {
+            ArrayList<ParseTreeNode> nodes = p.parse(tokens);
+
+            for (ParseTreeNode node : nodes) {
+                System.out.println(node);
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 }
