@@ -41,4 +41,8 @@ public class ParseTreeBodyNode extends ParseTreeNode{
         Parser p = new Parser();
         statements = p.parse(tokens);
     }
+
+    public ArrayList<LexToken> getTokens() {
+        return tokens;
+    }
 }

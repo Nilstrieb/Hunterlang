@@ -2,12 +2,13 @@ package com.github.nilstrieb.hunterlang.lexer;
 
 import com.github.nilstrieb.hunterlang.hllibrary.FunctionArgLookup;
 import com.github.nilstrieb.hunterlang.lib.ConsoleColors;
-import com.github.nilstrieb.hunterlang.parser.ParseTreeBodyNode;
 import com.github.nilstrieb.hunterlang.parser.ParseTreeNode;
 
 public class LexToken {
     WordType key;
     String value;
+
+
 
     private int argOverrideValue = -1;
 

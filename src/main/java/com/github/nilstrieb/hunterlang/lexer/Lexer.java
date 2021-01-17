@@ -170,20 +170,27 @@ public class Lexer {
                 }
                 Gon wants true {
                     Gon wants true {
-                        1
+                        Leorio does say "that is actually very true"
+                    }
+                }
+                """;
+        String ifif = """
+                Gon wants true {
+                    Gon wants true {
+                        Leorio does say "hallo"
                     }
                 }
                 """;
         String sif = """
                 Gon wants true {
-                    Leorio does say "false"
-                
+                    Leorio does say "hallo"
+                }
                 """;
         String hierarchy = """
                 killua0 hunts 3 > 3
                 """;
 
-        ArrayList<LexToken> tokens = l.lex(sif);
+        ArrayList<LexToken> tokens = l.lex(ifs);
 
         Parser p = new Parser();
         try {

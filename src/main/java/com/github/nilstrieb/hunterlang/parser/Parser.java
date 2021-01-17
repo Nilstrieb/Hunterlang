@@ -3,9 +3,9 @@ package com.github.nilstrieb.hunterlang.parser;
 import com.github.nilstrieb.hunterlang.lexer.LexToken;
 import com.github.nilstrieb.hunterlang.lexer.WordType;
 import com.github.nilstrieb.hunterlang.lib.ConsoleColors;
-import com.sun.source.tree.LambdaExpressionTree;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ListIterator;
 
 public class Parser {
@@ -19,10 +19,15 @@ public class Parser {
             System.out.println(lexTokens);
         }
 
+        System.out.println(ConsoleColors.YELLOW_BACKGROUND_BRIGHT + ConsoleColors.BLACK_BOLD + "PARSER" + ConsoleColors.RESET);
+
         ArrayList<ParseTreeNode> list = new ArrayList<>();
 
         ParseTreeNode parent = null;
         for (ArrayList<LexToken> statement : split) {
+            if (statement.size() == 0) {
+                throw new ParseException("empty body");
+            }
             ListIterator<LexToken> iterator = statement.listIterator();
 
             LexToken current = iterator.next();
@@ -49,12 +54,39 @@ public class Parser {
                     while (current.getKey() != WordType.BOPEN) {
                         current = iterator.next();
                         parent.addChild(current.toNode());
+                        //BOPEN does not need to be a child
                     }
 
+                    //add body tokens
                     int brackets = 0;
+                    current = iterator.next();
                     while ((brackets != 0 || current.getKey() != WordType.BCLOSE) && iterator.hasNext()) {
-                        current = iterator.next();
                         parentBN.addToken(current);
+                        System.out.println("addt " + current);
+                        current = iterator.next();
+                        if (current.getKey() == WordType.BOPEN) {
+                            brackets++;
+                        } else if (current.getKey() == WordType.BCLOSE) {
+                            if(brackets == 1){
+                                parentBN.addToken(current);
+                            }
+                            brackets--;
+                        }
+                    }
+                    parentBN.parse();
+                }
+                case ELSE -> {
+                    parent = new ParseTreeBodyNode(current.toNode());
+                    ParseTreeBodyNode parentBN = (ParseTreeBodyNode) parent;
+                    int brackets = 0;
+                    current = iterator.next();
+                    if (current.getKey() != WordType.BOPEN) {
+                        throw new ParseException("{ Expected: " + current.getKey());
+                    }
+                    current = iterator.next();
+                    while ((brackets != 0 || current.getKey() != WordType.BCLOSE) && iterator.hasNext()) {
+                        parentBN.addToken(current);
+                        current = iterator.next();
                         if (current.getKey() == WordType.BOPEN) {
                             brackets++;
                         } else if (current.getKey() == WordType.BCLOSE) {
@@ -63,13 +95,9 @@ public class Parser {
                     }
                     parentBN.parse();
                 }
-                case ELSE -> {
-
-                }
                 case LIBFUNCCALL -> {
-
-                }
-                case BCLOSE -> {
+                    parent = current.toNode();
+                    parent.addChild(evaluate(tokens.subList(1, tokens.size())));
                 }
 
                 default -> throw new ParseException("Unexpected value at start of statement: " + current.getKey());
@@ -88,7 +116,7 @@ public class Parser {
      * @param tokens The tokens
      * @return The parent node
      */
-    private ParseTreeNode evaluate(ArrayList<LexToken> tokens) throws ParseException {
+    private ParseTreeNode evaluate(List<LexToken> tokens) throws ParseException {
         ListIterator<LexToken> iterator = tokens.listIterator();
         LexToken prev;
         LexToken curr;
@@ -132,8 +160,11 @@ public class Parser {
 
         ListIterator<LexToken> iterator = tokens.listIterator();
 
-        if (tokens.size() < 2) {
-            throw new ParseException("code has to consist of at least 2 tokens");
+        if (tokens.size() < 1) {
+            return tokensSplit;
+        } else if (tokens.size() == 1) {
+            tokensSplit.get(0).add(iterator.next());
+            return tokensSplit;
         }
 
         LexToken prev;
