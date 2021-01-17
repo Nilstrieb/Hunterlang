@@ -1,5 +1,7 @@
 package com.github.nilstrieb.hunterlang.lexer;
 
+import com.github.nilstrieb.hunterlang.interpreter.Interpreter;
+import com.github.nilstrieb.hunterlang.interpreter.RuntimeException;
 import com.github.nilstrieb.hunterlang.lib.ConsoleColors;
 import com.github.nilstrieb.hunterlang.parser.ParseException;
 import com.github.nilstrieb.hunterlang.parser.ParseTreeNode;
@@ -32,7 +34,7 @@ public class Lexer {
 
     public static final String BOOL_REGEX = "(true|false).*";
     public static final String STRING_REGEX = "^\"(.*)\".*";
-    public static final String NUMBER_REGEX = "^(-?\\d+.?\\d*).*";
+    public static final String NUMBER_REGEX = "^(-?\\d+\\.?\\d*).*";
 
     private ArrayList<LexToken> tokens;
     private ArrayList<LexToken> temp;
@@ -149,58 +151,4 @@ public class Lexer {
         temp.add(new LexToken(type));
     }
 
-    public static void main(String[] args) {
-        Lexer l = new Lexer();
-
-        String assign = """
-                killua70 hunts 3 > 0
-                killua0 hunts 3
-                killua0 hunts -3.4 #hunts nothing
-                killua1 hunts "hallo"
-                #comment""";
-        String ifs = """
-                killua0 hunts 3 > 0
-                Gon wants false {
-                    Leorio does say "false"
-                }
-                wants killua0 > 3 {
-                    Leorio does say "big killua"
-                } got {
-                    Leorio does say "small killua"
-                }
-                Gon wants true {
-                    Gon wants true {
-                        Leorio does say "that is actually very true"
-                    }
-                }
-                """;
-        String ifif = """
-                Gon wants true {
-                    Gon wants true {
-                        Leorio does say "hallo"
-                    }
-                }
-                """;
-        String sif = """
-                Gon wants true {
-                    Leorio does say "hallo"
-                }
-                """;
-        String hierarchy = """
-                killua0 hunts 3 > 3
-                """;
-
-        ArrayList<LexToken> tokens = l.lex(ifs);
-
-        Parser p = new Parser();
-        try {
-            ArrayList<ParseTreeNode> nodes = p.parse(tokens);
-
-            for (ParseTreeNode parseTreeNode : nodes) {
-                System.out.println(parseTreeNode);
-            }
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-    }
 }

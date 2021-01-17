@@ -97,7 +97,9 @@ public class Parser {
                 }
                 case LIBFUNCCALL -> {
                     parent = current.toNode();
-                    parent.addChild(evaluate(tokens.subList(1, tokens.size())));
+                    if(current.hasPostfix()) {
+                        parent.addChild(evaluate(statement.subList(1, statement.size())));
+                    }
                 }
 
                 default -> throw new ParseException("Unexpected value at start of statement: " + current.getKey());

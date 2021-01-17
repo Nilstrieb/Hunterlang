@@ -25,8 +25,8 @@ public class ParseTreeNode {
         this(WordType.EMPTY, "");
     }
 
-    public ArrayList<ParseTreeNode> getChildren() {
-        return children;
+    public ParseTreeNode getChild(int index) {
+        return children.get(index);
     }
 
     public void addChild(ParseTreeNode n, boolean pre) {
@@ -95,5 +95,9 @@ public class ParseTreeNode {
 
     public String getValue() {
         return value;
+    }
+
+    public ArrayList<ParseTreeNode> getChildren() {
+        return children;
     }
 }

@@ -6,6 +6,7 @@ public class FunctionArgLookup {
         return switch (name) {
             case "Leorio.say" -> 1;
             case "Leorio.listen" -> 0;
+            case "Wing.dump" -> 0;
             default -> 0;
         };
     }
