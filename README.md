@@ -1,8 +1,16 @@
 # Hunterlang
 A hunter x hunter themed interpreted esoteric programming language.  
 
-The first version of the lexer is done, the parser is still in work.
-Some example code:
+Very basic functionality is available:
+```
+killua0 hunts 4             # save 4 to memory location 0
+Leorio does say killua9     # output the saved data at location 0
+Wing does dump              # dump memory
+Gon wants true {            # if true
+    Leorio does say "hi"    # output hi
+}
+```
+Some example code (that does not work yet):
 ```	
 #Add two numbers
 Leorio does say "Number 1"
